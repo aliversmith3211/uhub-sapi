@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="906b59c9-e435-4dc0-b427-1428faecb579" >
+		<db:oracle-connection host="localhost" user="System" instance="XE" password="Smith"/>
+	</db:config>
+	<sub-flow name="uhub-create-db-sub_flow" doc:id="e59b8d8a-6e2b-4cbb-b839-06c5807cdf78" >
+		<logger level="INFO" doc:name="Logger" doc:id="27dd8489-062b-4b78-9e15-1096ab5706e0" message="insert Log Started"/>
+		<db:insert doc:name="Insert" doc:id="d3fce125-953e-4cdf-aa95-77db2fb10705" autoGenerateKeys="true">
+			<db:sql ><![CDATA[INSERT INTO cvd_case_master 
+                (source, 
+                 case_type, 
+                 first_name, 
+                 last_name, 
+                 phone, 
+                 email, 
+                 date_of_birth, 
+                 national_id, 
+                 national_id_type, 
+                 street_address, 
+                 city, 
+                 state, 
+                 postal, 
+                 country, 
+                 create_date, 
+                 update_date, 
+                 create_by, 
+                 update_by) 
+    VALUES     (:source, 
+                :case_type, 
+                :first_name, 
+                :last_name, 
+                :phone, 
+                :email, 
+                To_date(:date_of_birth, 'YYYY-MM-DD'), 
+                :national_id, 
+                :national_id_type, 
+                :street_address, 
+                :city, 
+                :state, 
+                :postal, 
+                :country, 
+                To_date(:create_date, 'YYYY-MM-DD'), 
+                To_date(:update_date, 'YYYY-MM-DD'), 
+                :create_by, 
+                :update_by)]]></db:sql>
+			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+			<db:auto-generated-keys-column-names >
+				<db:auto-generated-keys-column-name value="CASE_ID" />
+			</db:auto-generated-keys-column-names>
+		</db:insert>
+		<logger level="INFO" doc:name="Logger" doc:id="185e3afd-65b5-4c12-98af-35907ca489eb" message="insert Log Completed"/>
+	</sub-flow>
+	<sub-flow name="uhub-update-db-sub_flow" doc:id="50b83ef6-2d83-46ea-9ccf-dd6954b6e63f" >
+		<logger level="INFO" doc:name="Logger" doc:id="4ed07447-32e3-4cff-8908-2a98090f070f" message="update Log Started" />
+		<db:update doc:name="Update" doc:id="85375209-9fbc-434d-9183-141e7e42dd73">
+			<db:sql ><![CDATA[UPDATE CVD_CASE_MASTER
+SET 
+    source = :source, 
+    case_type = :case_type, 
+    first_name = :first_name, 
+    last_name = :last_name, 
+    phone = :phone, 
+    email = :email, 
+    date_of_birth = TO_DATE(:date_of_birth, 'YYYY-MM-DD'), 
+    national_id = :national_id, 
+    national_id_type = :national_id_type, 
+    street_address = :street_address, 
+    city = :city, 
+    state = :state, 
+    postal = :postal, 
+    country = :country, 
+    update_date = TO_DATE(:update_date, 'YYYY-MM-DD'), 
+    create_by = :create_by, 
+    update_by = :update_by
+WHERE 
+    case_id = :caseId
+]]></db:sql>
+			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+		</db:update>
+		<logger level="INFO" doc:name="Completed" doc:id="67fbc32b-c94f-44c5-8b82-2b989343e3d3" message="Updated Log Completed" />
+	</sub-flow>
+	<sub-flow name="uhub-reports-db-sub_flow" doc:id="2eee8b22-ea2d-4f00-b7aa-b7b20ce0c845" >
+		<logger level="INFO" doc:name="Logger" doc:id="79656ec4-dbd8-4f53-ba53-11d1c87080c4" message="Reports Log Started" />
+		<db:select doc:name="Select" doc:id="59da3365-5e84-48a9-850d-80cbef4c964b">
+			<db:sql ><![CDATA[SELECT * FROM CVD_CASE_MASTER WHERE  state=: state]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	"state": attributes.queryParams.state
+}]]]></db:input-parameters>
+		</db:select>
+		<logger level="INFO" doc:name="Logger" doc:id="b44a9d15-e4b2-458f-b464-6c195e30f7b2" message="Reports Log Completed" />
+	</sub-flow>
+	<sub-flow name="uhub-national-db-sub_flow" doc:id="e1596d17-1bcb-4a32-9c7d-65fbfb5d1c45" >
+		<logger level="INFO" doc:name="Logger" doc:id="6395c2c0-7629-4256-ae3d-17b77a58c981" message="National  Log Started" />
+		<db:select doc:name="Select" doc:id="3f91009d-7a2f-4a76-970e-39aeb540b023" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT * FROM CVD_CASE_MASTER WHERE national_id =:nationalId]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	"nationalId": vars.nationalID
+}]]]></db:input-parameters>
+		</db:select>
+		<logger level="INFO" doc:name="Logger" doc:id="4e03aef2-ee58-4604-b2d2-458398e2e97a" message="National  Log completed" />
+	</sub-flow>
+</mule>

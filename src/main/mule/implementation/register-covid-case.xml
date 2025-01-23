@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+	<file:config name="File_Config" doc:name="File Config" doc:id="58bd2de0-89aa-4d8b-9bb6-6178dddf03cb" />
+	<flow name="post:\cases:application\json:uhub-sapi-config">
+		<set-variable value="#[attributes.headers.'x-correlation-id' default '']" doc:name="Set CorrelationId" doc:id="cd8cf3f0-16d7-4465-a94f-e6e44fe2c7d5" variableName="correlationId"/>
+		<ee:transform doc:name="Transform Message" doc:id="4896bd37-fb92-48b8-880d-100e79820b99">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+var actionDate = now() as String{
+    format :"yyyy-MM-dd"}
+var owner = "Smith"
+---
+{
+	national_id: payload.nationalID,
+	street_address: payload.address.streetAddress,
+	country: payload.address.country,
+	city: payload.address.city,
+	date_of_birth: payload.dateOfBirth,
+	case_type: payload.caseType,
+	last_name: payload.lastName,
+	source: payload.source,
+	national_id_type: payload.nationalIDType,
+	update_date: actionDate,
+	create_by: owner,
+	phone: payload.phone,
+	state: payload.address.state,
+	postal: payload.address.postal,
+	create_date: actionDate,
+	update_by: owner,
+	first_name: payload.firstName,
+	email: payload.email
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="createCSV" ><![CDATA[%dw 2.0
+output application/csv separator=","
+---
+[
+    {
+        source: payload.source,
+        caseType: payload.caseType,
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        phone: payload.phone,
+        email: payload.email,
+        dateOfBirth: payload.dateOfBirth,
+        nationalID: payload.nationalID,
+        nationalIDType: payload.nationalIDType,
+        streetAddress: payload.address.streetAddress,
+        city: payload.address.city,
+        state: payload.address.state,
+        postal: payload.address.postal,
+        country: payload.address.country
+    }
+]
+]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<file:write doc:name="Write" doc:id="dc2de0a6-7279-443c-b33a-da3aaf54e9aa" config-ref="File_Config" path="C:\Users\vCollab\Downloads\Mule-CSV.csv" mode="APPEND">
+			<file:content ><![CDATA[#[vars.createCSV]]]></file:content>
+		</file:write>
+		<flow-ref doc:name="Flow Reference" doc:id="5068c09e-0ece-4cf9-bfc0-ae127d51a4e8" name="uhub-create-db-sub_flow" />
+		<ee:transform doc:name="Transform Message" doc:id="28ef2a33-3be7-4161-a9e8-6d92ecc91633">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	caseID: payload[0].CASE_ID as String
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="88c35f1b-4101-4d39-83ee-73511c7866a5" message="Create Flow Completed"/>
+    
+</flow>
+	</mule>

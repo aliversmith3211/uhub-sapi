@@ -1,0 +1,26 @@
+%dw 2.0
+
+type auto_e1596d17_1bcb_4a32_9c7d_65fbfb5d1c45_Output_Attributes = {|
+  clientCertificate*?: {|
+    publicKey?: {|  |}, 
+    "type"?: String, 
+    encoded?: Binary
+  |}, 
+  headers*: {|
+    "x-correlation-id"?: String, 
+    "x-transaction-id"?: String
+  |}, 
+  listenerPath*: String, 
+  localAddress*: String, 
+  method*: String, 
+  queryParams*: {|  |}, 
+  queryString*: String, 
+  relativePath*: String, 
+  remoteAddress*: String, 
+  requestPath*: String, 
+  requestUri*: String, 
+  scheme*: String, 
+  uriParams*: {| nationalID: String |}, 
+  version*: String
+|}
+
